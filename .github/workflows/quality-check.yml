@@ -1,0 +1,77 @@
+name: Quality and security check
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify project structure
+        shell: bash
+        run: |
+          test -f README.md || { echo "README.md is required"; exit 1; }
+          test -f index.html || { echo "index.html is required"; exit 1; }
+          test -f .gitignore || { echo ".gitignore is required"; exit 1; }
+
+      - name: Reject private files
+        shell: bash
+        run: |
+          blocked="$(git ls-files | grep -E '(^|/)\.env($|\.)|\.(pem|p12|pfx)$|(^|/)id_rsa$|(^|/)config\.local\.js$' || true)"
+          if [ -n "$blocked" ]; then
+            echo "Private/local files must not be committed:"
+            echo "$blocked"
+            exit 1
+          fi
+
+      - name: Scan source for high-risk secrets
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64, json, pathlib, re, sys
+
+          roots_to_skip = {'.git', '.github', 'node_modules', 'dist', 'build'}
+          extensions = {'.html', '.js', '.mjs', '.cjs', '.ts', '.json', '.css', '.sql', '.py', '.ps1', '.sh'}
+          direct_patterns = [
+              ('private key', re.compile(r'-----BEGIN(?: [A-Z0-9]+)* PRIVATE KEY-----')),
+              ('AWS access key', re.compile(r'\bAKIA[0-9A-Z]{16}\b')),
+              ('Supabase secret key', re.compile(r'\bsb_secret_[A-Za-z0-9_-]{10,}\b')),
+              ('Stripe secret key', re.compile(r'\bsk_(?:live|test)_[A-Za-z0-9]{16,}\b')),
+          ]
+          jwt_pattern = re.compile(r'eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+')
+          findings = []
+
+          for path in pathlib.Path('.').rglob('*'):
+              if not path.is_file() or path.suffix.lower() not in extensions:
+                  continue
+              if any(part in roots_to_skip for part in path.parts):
+                  continue
+              text = path.read_text(encoding='utf-8', errors='ignore')
+              for label, pattern in direct_patterns:
+                  if pattern.search(text):
+                      findings.append(f'{path}: possible {label}')
+              for token in jwt_pattern.findall(text):
+                  try:
+                      payload = token.split('.')[1]
+                      payload += '=' * (-len(payload) % 4)
+                      data = json.loads(base64.urlsafe_b64decode(payload).decode('utf-8'))
+                      if data.get('role') == 'service_role':
+                          findings.append(f'{path}: Supabase service_role JWT')
+                  except Exception:
+                      pass
+
+          if findings:
+              print('High-risk secret material detected:')
+              print('\n'.join(sorted(set(findings))))
+              sys.exit(1)
+          print('No high-risk secret patterns detected.')
+          PY
