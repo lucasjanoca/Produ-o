@@ -1,34 +1,55 @@
 # 📊 Produção — Painel Operacional
 
-> Projeto de acompanhamento visual de produção e desempenho operacional.
+> Painel web para acompanhamento visual de produção e desempenho operacional.
 
-Este repositório reúne um painel web criado para organizar e apresentar informações de produção de forma simples e visual. O projeto nasceu de uma necessidade prática e evoluiu para uma experiência pensada para acompanhamento em tela grande e consulta rápida.
+O projeto organiza informações de produção em uma interface pensada para consulta rápida, uso em TV e atualização por uma área administrativa protegida.
 
 ## 🌐 Projeto ao vivo
 
-**[Abrir o painel no GitHub Pages](https://lukinhas-sta.github.io/Produ-o/)**
+**[Abrir o painel no GitHub Pages](https://lucasjanoca.github.io/Produ-o/)**
 
-## ✨ Proposta
+## ✨ Recursos
 
-- Visualização de produção diária
-- Indicadores e rankings
-- Organização de informações operacionais
-- Interface adequada para painel/TV
-- Histórico para consulta de resultados
-- Experiência simples para atualização e leitura dos dados
+- produção diária e semanal;
+- indicadores e rankings;
+- histórico de resultados;
+- avisos e páginas extras para apresentação;
+- interface para TV/tela grande;
+- área administrativa com autenticação;
+- upload controlado de imagens;
+- atualização de metas e configurações do painel.
+
+## 🔐 Segurança
+
+A área administrativa possui uma lista explícita de usuários autorizados no banco. Uma conta autenticada no Supabase, sozinha, não recebe permissão para alterar os dados do painel.
+
+A criação de novos acessos passa por uma função de servidor protegida, e as operações de escrita são verificadas por Row Level Security (RLS). Arquivos enviados pelo painel também usam políticas próprias de Storage.
+
+O painel público permanece somente para visualização; alterações exigem uma conta administrativa autorizada.
 
 ## 🛠️ Tecnologias
 
 `HTML5` · `CSS3` · `JavaScript` · `Supabase` · `GitHub Pages`
 
-## 🧠 O que este projeto representa
+## 🧪 Fluxo de desenvolvimento
 
-Diferente dos meus primeiros trabalhos escolares, este projeto nasceu da observação de um processo real. Ele representa a evolução para sistemas focados em resolver problemas de operação, visualização de dados e produtividade.
+- `main` — versão publicada;
+- `dev` — desenvolvimento e validação;
+- GitHub Actions — checagens de estrutura e segurança antes da publicação.
 
-## 🔐 Observação
+## 📁 Arquivos principais
 
-Dados, acessos e credenciais privadas não devem ser armazenados diretamente no código público.
+- `index.html` — painel de apresentação;
+- `admin.html` — interface administrativa;
+- `js/admin.js` — funções administrativas;
+- `js/admin-security.js` — validação adicional de acesso e criação segura de contas;
+- `js/config.js` — configuração pública do frontend;
+- `.github/workflows/quality-check.yml` — auditoria automática.
+
+## 🧠 Objetivo
+
+Este projeto nasceu de uma necessidade prática de operação e evoluiu para um sistema focado em visualização de dados, produtividade e controle de acesso.
 
 ---
 
-**Projeto mantido como parte da minha evolução no desenvolvimento de sistemas web.**
+**Projeto mantido como parte do portfólio de soluções web da InfoTech.io.**
